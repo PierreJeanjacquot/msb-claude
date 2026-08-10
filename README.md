@@ -40,7 +40,7 @@ No registry involved: the image is built locally with Docker, then piped straigh
 msb create \
   --name ubuntu-msb \
   --net public \
-  -v ./:${PWD} \
+  -v ${PWD}:${PWD} \
   --workdir ${PWD} \
   --cpus 2 --max-cpus 8 \
   --memory 4G --max-memory 8G \
@@ -50,7 +50,7 @@ msb create \
 
 - `--name ubuntu-msb` — name of the sandbox, used to find/reuse it (`msb exec`, `msb rm`, ...).
 - `--net public` — allow all outbound network access. See the [Network isolation](#network-isolation) cookbook for a more restricted setup.
-- `-v ./:${PWD}` — bind-mount the current directory into the sandbox at the same path.
+- `-v ${PWD}:${PWD}` — bind-mount the current directory into the sandbox at the same path (use absolute path to avoid dynamic resolution change).
 - `--workdir ${PWD}` — working directory inside the sandbox, aligned with the mount above.
 - `--cpus 2 --max-cpus 8` / `--memory 4G --max-memory 8G` — baseline / burst resource limits.
 - `--secret "CLAUDE_CODE_OAUTH_TOKEN@api.anthropic.com"` — reads `$CLAUDE_CODE_OAUTH_TOKEN` from your host shell (step 1) and makes it available to the sandbox, scoped to `api.anthropic.com` only. See the [secrets documentation](https://docs.microsandbox.dev/sandboxes/secrets.md) for the full trust model.
@@ -84,7 +84,7 @@ To make [Claude Code skills](https://docs.claude.com/en/docs/claude-code/skills)
 msb create \
   --name ubuntu-msb \
   --net public \
-  -v ./:${PWD} \
+  -v ${PWD}:${PWD} \
   -v ${HOME}/.agents/skills:/home/ubuntu/.claude/skills:ro \
   --workdir ${PWD} \
   --cpus 2 --max-cpus 8 \
@@ -106,7 +106,7 @@ msb create \
   --name ubuntu-msb-isolated \
   --no-net \
   --net-rule "allow@api.anthropic.com:tcp:443" \
-  -v ./:${PWD} \
+  -v ${PWD}:${PWD} \
   --workdir ${PWD} \
   --cpus 2 --max-cpus 8 \
   --memory 4G --max-memory 8G \
