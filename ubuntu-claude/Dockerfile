@@ -7,6 +7,8 @@ RUN echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ubuntu && chmod 0440 /
 # use non root user
 USER ubuntu
 WORKDIR /home/ubuntu
+# setup TERM fallback to xterm-256color when connecting host uses incompatible term
+RUN echo 'infocmp "$TERM" >/dev/null 2>&1 || export TERM=xterm-256color' >> ~/.bashrc
 # install claude
 RUN curl -fsSL https://claude.ai/install.sh | bash
 RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
