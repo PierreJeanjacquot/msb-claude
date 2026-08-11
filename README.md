@@ -97,6 +97,36 @@ msb create \
 
 Volumes can only be set at `msb create` time (not added later with `msb modify`) — remove and recreate the sandbox if you need to change the mount.
 
+### GitHub setup
+
+The image ships with [`gh`](https://cli.github.com) preconfigured to authenticate git over HTTPS (`files/gitconfig` wires `credential.helper` to `gh auth git-credential` for `github.com` and `gist.github.com`), plus a `PreToolUse` hook (`files/setup-git-identity-from-gh.sh`) that runs before `git add`/`git commit` and fills in whichever of git `user.name`/`user.email` isn't already set, from the authenticated `gh` account — any value you've already configured is left untouched. This lets Claude push commits, open PRs, and use `gh` commands from inside the sandbox.
+
+On your **host**, generate a token `gh` can use non-interactively, e.g. from an account already logged in via `gh auth login`:
+
+```bash
+export GH_OAUTH_TOKEN=$(gh auth token)
+```
+
+Then create the sandbox as in step 3, adding two `--secret` flags for that token — one per host `gh` talks to (`github.com` for git/credential operations, `api.github.com` for `gh api`/`gh pr`/... calls):
+
+```bash
+msb create \
+  --name ubuntu-msb \
+  --net public \
+  -v ${PWD}:${PWD} \
+  --workdir ${PWD} \
+  --cpus 2 --max-cpus 8 \
+  --memory 4G --max-memory 8G \
+  --secret "CLAUDE_CODE_OAUTH_TOKEN@api.anthropic.com" \
+  --secret "GH_OAUTH_TOKEN@api.github.com" \
+  --secret "GH_OAUTH_TOKEN@github.com" \
+  ubuntu-claude
+```
+
+- `--secret "GH_OAUTH_TOKEN@api.github.com"` / `--secret "GH_OAUTH_TOKEN@github.com"` — reads `$GH_OAUTH_TOKEN` from your host shell and makes it available to the sandbox, scoped to those two hosts only (`files/gh-hosts.yml` references it as `$MSB_GH_OAUTH_TOKEN`, the placeholder `msb` injects for a secret bound this way — see the [secrets documentation](https://docs.microsandbox.dev/sandboxes/secrets.md)).
+
+If `GH_OAUTH_TOKEN` isn't set, `gh` inside the sandbox has no credentials: `gh auth git-credential` fails, so git operations over HTTPS and the identity-setup hook fail too.
+
 ### Network isolation
 
 To restrict the sandbox's network access to only the Anthropic API (instead of full outbound access), replace `--net public` with `--no-net` plus a `--net-rule` allowing just that destination:

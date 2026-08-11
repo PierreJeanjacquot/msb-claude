@@ -1,0 +1,4 @@
+github.com:
+  git_protocol: https
+  # $MSB_GH_OAUTH_TOKEN is the placeholder provided by msb when creating sandbox with `--secret "GH_OAUTH_TOKEN@api.github.com" --secret "GH_OAUTH_TOKEN@github.com"`
+  oauth_token: $MSB_GH_OAUTH_TOKEN
