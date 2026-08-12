@@ -5,6 +5,7 @@ A Docker image (`ubuntu-claude`) with [Claude Code](https://claude.com/claude-co
 ## Contents
 
 - `ubuntu-claude/Dockerfile` — builds on top of `ubuntu`, installs Claude Code, skips the interactive onboarding (auth is handled via a token, see below), and sets up a default status line.
+- `ubuntu-claude/files/` — files copied into the image by the Dockerfile, laid out under `home/` to mirror their destination path relative to `/home/ubuntu` (e.g. `files/home/.gitconfig` → `~/.gitconfig`).
 
 ## Prerequisites
 
@@ -78,7 +79,7 @@ Stops (if needed) and removes the sandbox and its state. The `ubuntu-claude` ima
 
 ### Adding skills
 
-To make [Claude Code skills](https://docs.claude.com/en/docs/claude-code/skills) from your host available inside the sandbox, mount your skills directory read-only at `/home/ubuntu/.host/.agents/skills`. That specific path is expected by a `SessionStart` hook (`files/relink-skills.sh`), which scans it on every session start and symlinks each skill directory it finds into `~/.claude/skills` — no manual symlinking needed. The example below assumes skills are managed with [`npx skills`](https://www.npmjs.com/package/skills) installed globally on the host, which keeps them under `~/.agents/skills`:
+To make [Claude Code skills](https://docs.claude.com/en/docs/claude-code/skills) from your host available inside the sandbox, mount your skills directory read-only at `/home/ubuntu/.host/.agents/skills`. That specific path is expected by a `SessionStart` hook (`files/home/.claude/hooks/relink-skills.sh`), which scans it on every session start and symlinks each skill directory it finds into `~/.claude/skills` — no manual symlinking needed. The example below assumes skills are managed with [`npx skills`](https://www.npmjs.com/package/skills) installed globally on the host, which keeps them under `~/.agents/skills`:
 
 ```bash
 msb create \
@@ -101,7 +102,7 @@ Volumes can only be set at `msb create` time (not added later with `msb modify`)
 
 ### GitHub setup
 
-The image ships with [`gh`](https://cli.github.com) preconfigured to authenticate git over HTTPS (`files/gitconfig` wires `credential.helper` to `gh auth git-credential` for `github.com` and `gist.github.com`), plus a `PreToolUse` hook (`files/setup-git-identity-from-gh.sh`) that runs before `git add`/`git commit` and fills in whichever of git `user.name`/`user.email` isn't already set, from the authenticated `gh` account — any value you've already configured is left untouched. This lets Claude push commits, open PRs, and use `gh` commands from inside the sandbox.
+The image ships with [`gh`](https://cli.github.com) preconfigured to authenticate git over HTTPS (`files/home/.gitconfig` wires `credential.helper` to `gh auth git-credential` for `github.com` and `gist.github.com`), plus a `PreToolUse` hook (`files/home/.claude/hooks/setup-git-identity-from-gh.sh`) that runs before `git add`/`git commit` and fills in whichever of git `user.name`/`user.email` isn't already set, from the authenticated `gh` account — any value you've already configured is left untouched. This lets Claude push commits, open PRs, and use `gh` commands from inside the sandbox.
 
 On your **host**, generate a token `gh` can use non-interactively, e.g. from an account already logged in via `gh auth login`:
 
@@ -125,7 +126,7 @@ msb create \
   ubuntu-claude
 ```
 
-- `--secret "GH_OAUTH_TOKEN@api.github.com"` / `--secret "GH_OAUTH_TOKEN@github.com"` — reads `$GH_OAUTH_TOKEN` from your host shell and makes it available to the sandbox, scoped to those two hosts only (`files/gh-hosts.yml` references it as `$MSB_GH_OAUTH_TOKEN`, the placeholder `msb` injects for a secret bound this way — see the [secrets documentation](https://docs.microsandbox.dev/sandboxes/secrets.md)).
+- `--secret "GH_OAUTH_TOKEN@api.github.com"` / `--secret "GH_OAUTH_TOKEN@github.com"` — reads `$GH_OAUTH_TOKEN` from your host shell and makes it available to the sandbox, scoped to those two hosts only (`files/home/.config/gh/hosts.yml` references it as `$MSB_GH_OAUTH_TOKEN`, the placeholder `msb` injects for a secret bound this way — see the [secrets documentation](https://docs.microsandbox.dev/sandboxes/secrets.md)).
 
 If `GH_OAUTH_TOKEN` isn't set, `gh` inside the sandbox has no credentials: `gh auth git-credential` fails, so git operations over HTTPS and the identity-setup hook fail too.
 
