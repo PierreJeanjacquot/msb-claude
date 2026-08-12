@@ -154,6 +154,51 @@ msb create \
 
 Network policies can only be set at `msb create` time (not added later with `msb modify`) — remove and recreate the sandbox if you need to change them.
 
+### Connecting an MCP server (Atlassian)
+
+Claude Code inside the sandbox can use a remote MCP server — for example [Atlassian's](https://www.atlassian.com/platform/remote-mcp-server) (Jira/Confluence) — the same way it uses its own auth token: authenticate once on the **host** to get an OAuth token, then carry that token into the sandbox as a secret set at creation time.
+
+On your host, connect the MCP server and go through the OAuth login flow:
+
+```bash
+claude mcp add --transport http atlassian https://mcp.atlassian.com/v1/mcp -s user
+```
+
+This stores the resulting token in `~/.claude/.credentials.json`, under `mcpOAuth."atlassian|<server-id>"`. Extract it and export it in the shell you'll use to create the sandbox:
+
+```bash
+export ATLASSIAN_OAUTH_TOKEN=$(jq -r '.mcpOAuth."atlassian|<server-id>".accessToken' ~/.claude/.credentials.json)
+```
+
+- `<server-id>` — the id Claude Code assigned to this MCP server on the host; read it from the `mcpOAuth` key in that same file.
+
+Create the sandbox with an extra `--secret` for the MCP token, alongside the one from step 3:
+
+```bash
+msb create \
+  --name ubuntu-msb \
+  --net public \
+  -v ${PWD}:${PWD} \
+  --workdir ${PWD} \
+  --cpus 2 --max-cpus 8 \
+  --memory 4G --max-memory 8G \
+  --secret "CLAUDE_CODE_OAUTH_TOKEN@api.anthropic.com" \
+  --secret "ATLASSIAN_OAUTH_TOKEN@mcp.atlassian.com" \
+  ubuntu-claude
+```
+
+- `--secret "ATLASSIAN_OAUTH_TOKEN@mcp.atlassian.com"` — reads `$ATLASSIAN_OAUTH_TOKEN` from your host shell and makes it available to the sandbox, scoped to `mcp.atlassian.com` only. Same trust model as the `CLAUDE_CODE_OAUTH_TOKEN` secret (see step 3 above).
+
+Inside the sandbox (`msb exec ubuntu-msb -- bash`), register the same MCP server, then write the token into the sandbox's own credentials file:
+
+```bash
+claude mcp add --transport http atlassian https://mcp.atlassian.com/v1/mcp -s user
+(cat ~/.claude/.credentials.json 2>/dev/null || echo '{}') | jq '.mcpOAuth."atlassian|<server-id>" = {"accessToken":"$MSB_ATLASSIAN_OAUTH_TOKEN"}' > /tmp/.credentials.json.tmp && mv /tmp/.credentials.json.tmp ~/.claude/.credentials.json
+```
+
+- `<server-id>` — must match the id used on the host, so this entry lines up with the secret injected at creation.
+- The `accessToken` is set to the literal `$MSB_ATLASSIAN_OAUTH_TOKEN` placeholder — Claude Code expands it from the environment at runtime. Note the `MSB_` prefix: secrets injected at `msb create` time are exposed inside the sandbox as `MSB_<NAME>`, unlike secrets added later via `msb modify`, which keep their original name.
+
 ## Going further
 
 A few other `msb` commands that are handy while experimenting (see [CLI overview](https://docs.microsandbox.dev/cli/overview.md) for the full reference):
