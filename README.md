@@ -78,14 +78,14 @@ Stops (if needed) and removes the sandbox and its state. The `ubuntu-claude` ima
 
 ### Adding skills
 
-To make [Claude Code skills](https://docs.claude.com/en/docs/claude-code/skills) from your host available inside the sandbox, mount your skills directory read-only at `~/.claude/skills` (the `ubuntu` user's home in the image is `/home/ubuntu`). The example below assumes skills are managed with [`npx skills`](https://www.npmjs.com/package/skills) installed globally on the host, which keeps them under `~/.agents/skills`:
+To make [Claude Code skills](https://docs.claude.com/en/docs/claude-code/skills) from your host available inside the sandbox, mount your skills directory read-only at `/home/ubuntu/.host/.agents/skills`. That specific path is expected by a `SessionStart` hook (`files/relink-skills.sh`), which scans it on every session start and symlinks each skill directory it finds into `~/.claude/skills` — no manual symlinking needed. The example below assumes skills are managed with [`npx skills`](https://www.npmjs.com/package/skills) installed globally on the host, which keeps them under `~/.agents/skills`:
 
 ```bash
 msb create \
   --name ubuntu-msb \
   --net public \
   -v ${PWD}:${PWD} \
-  -v ${HOME}/.agents/skills:/home/ubuntu/.claude/skills:ro \
+  -v ${HOME}/.agents/skills:/home/ubuntu/.host/.agents/skills:ro \
   --workdir ${PWD} \
   --cpus 2 --max-cpus 8 \
   --memory 4G --max-memory 8G \
@@ -93,7 +93,9 @@ msb create \
   ubuntu-claude
 ```
 
-- `-v ${HOME}/.agents/skills:/home/ubuntu/.claude/skills:ro` — mounts the host's skills directory read-only inside the sandbox. Adjust the source path to wherever your skills actually live.
+- `-v ${HOME}/.agents/skills:/home/ubuntu/.host/.agents/skills:ro` — mounts the host's skills directory read-only at the expected path. Adjust the source path to wherever your skills actually live; the destination must stay `/home/ubuntu/.host/.agents/skills` for the relink hook to pick it up.
+
+The hook only manages symlinks it created itself: it leaves alone anything that's already a real file/dir or a symlink pointing elsewhere at the same name in `~/.claude/skills`, and it removes symlinks it previously created once their source skill disappears from the mount. It re-runs on every session start, so adding, removing, or updating skills on the host only requires restarting the Claude Code session inside the sandbox — not recreating it.
 
 Volumes can only be set at `msb create` time (not added later with `msb modify`) — remove and recreate the sandbox if you need to change the mount.
 

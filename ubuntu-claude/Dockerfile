@@ -19,6 +19,10 @@ RUN jq '.hasCompletedOnboarding = true' ~/.claude.json > /tmp/claude.json.tmp &&
 # setup default status line
 COPY --chown=ubuntu:ubuntu files/statusline-default.sh .claude/
 RUN (cat ~/.claude/settings.json 2>/dev/null || echo '{}') | jq '.statusLine = {"type": "command", "command": "if [ -f $HOME/.claude/statusline.sh ]; then bash $HOME/.claude/statusline.sh; else bash $HOME/.claude/statusline-default.sh; fi"}' > /tmp/settings.json.tmp && mv /tmp/settings.json.tmp ~/.claude/settings.json
+# setup skills relink from ~/.host/.agents/skills/
+RUN mkdir -p .claude/hooks
+COPY --chown=ubuntu:ubuntu files/relink-skills.sh .claude/hooks/
+RUN jq '.hooks.SessionStart += [{"hooks":[{"type":"command","command":"bash \"$HOME/.claude/hooks/relink-skills.sh\"","timeout":15}]}]' ~/.claude/settings.json > /tmp/settings.json.tmp && mv /tmp/settings.json.tmp ~/.claude/settings.json
 # setup git via gh
 RUN sudo apt install gh -y
 RUN mkdir -p .config/gh
