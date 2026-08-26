@@ -4,7 +4,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl git jq nano sudo \
     && rm -rf /var/lib/apt/lists/* && update-ca-certificates
-# add passwodless sudo for ubuntu user
+# add passwordless sudo for ubuntu user
 RUN echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ubuntu && chmod 0440 /etc/sudoers.d/ubuntu
 # use non root user
 USER ubuntu
