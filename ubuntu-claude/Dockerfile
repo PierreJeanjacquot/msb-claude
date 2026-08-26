@@ -1,7 +1,8 @@
-# dockerfile for pierreiexec/ubuntu-claude
 FROM ubuntu
-RUN DEBIAN_FRONTEND=noninteractive apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates curl git jq nano sudo \
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl git jq nano sudo \
     && rm -rf /var/lib/apt/lists/* && update-ca-certificates
 # add passwodless sudo for ubuntu user
 RUN echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ubuntu && chmod 0440 /etc/sudoers.d/ubuntu
@@ -24,7 +25,8 @@ RUN mkdir -p .claude/hooks
 COPY --chown=ubuntu:ubuntu files/home/.claude/hooks/relink-skills.sh .claude/hooks/
 RUN jq '.hooks.SessionStart += [{"hooks":[{"type":"command","command":"bash \"$HOME/.claude/hooks/relink-skills.sh\"","timeout":15}]}]' ~/.claude/settings.json > /tmp/settings.json.tmp && mv /tmp/settings.json.tmp ~/.claude/settings.json
 # setup git via gh
-RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends gh \
+RUN sudo apt-get update \
+    && sudo apt-get install -y --no-install-recommends gh \
     && sudo rm -rf /var/lib/apt/lists/*
 RUN mkdir -p .config/gh
 COPY --chown=ubuntu:ubuntu files/home/.config/gh/config.yml .config/gh/
