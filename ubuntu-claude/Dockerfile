@@ -1,5 +1,6 @@
 FROM ubuntu
 ARG DEBIAN_FRONTEND=noninteractive
+SHELL [ "/bin/bash", "-l", "-c" ]
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl git jq nano sudo \
@@ -35,3 +36,9 @@ COPY --chown=ubuntu:ubuntu files/home/.gitconfig ./
 RUN mkdir -p .claude/hooks
 COPY --chown=ubuntu:ubuntu files/home/.claude/hooks/setup-git-identity-from-gh.sh .claude/hooks/
 RUN jq '.hooks.PreToolUse += [{"matcher":"Bash","hooks":[{"type":"command","if":"Bash(git add *)","command":"bash \"$HOME/.claude/hooks/setup-git-identity-from-gh.sh\"","timeout":30},{"type":"command","if":"Bash(git commit *)","command":"bash \"$HOME/.claude/hooks/setup-git-identity-from-gh.sh\"","timeout":30}]}]' ~/.claude/settings.json > /tmp/settings.json.tmp && mv /tmp/settings.json.tmp ~/.claude/settings.json
+# setup node (nvm)
+RUN sudo apt-get update \
+    && sudo apt-get install -y --no-install-recommends libatomic1 \
+    && sudo rm -rf /var/lib/apt/lists/*
+ENV NVM_DIR=/home/ubuntu/.nvm
+RUN mkdir -p ${NVM_DIR} && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.6/install.sh | bash && source ${NVM_DIR}/nvm.sh && nvm install node

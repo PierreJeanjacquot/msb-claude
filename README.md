@@ -4,7 +4,7 @@ A Docker image (`ubuntu-claude`) with [Claude Code](https://claude.com/claude-co
 
 ## Contents
 
-- `ubuntu-claude/Dockerfile` — builds on top of `ubuntu`, installs Claude Code, skips the interactive onboarding (auth is handled via a token, see below), and sets up a default status line.
+- `ubuntu-claude/Dockerfile` — builds on top of `ubuntu`, installs Claude Code, skips the interactive onboarding (auth is handled via a token, see below), sets up a default status line, and installs Node.js via [nvm](https://github.com/nvm-sh/nvm).
 - `ubuntu-claude/files/` — files copied into the image by the Dockerfile, laid out under `home/` to mirror their destination path relative to `/home/ubuntu` (e.g. `files/home/.gitconfig` → `~/.gitconfig`).
 
 ## Prerequisites
