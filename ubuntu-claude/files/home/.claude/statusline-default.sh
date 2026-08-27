@@ -57,9 +57,9 @@ render_bar() {
 
 # ── Line 1: user@host:cwd ───────────────────────────────────────────
 
-# [📦 sandbox-name] (only in sandbox)
-if [ -n "$MSB_HOSTNAME" ]; then
-  printf '\033[01;33m[MSB📦%s]\033[00m ' "$MSB_HOSTNAME"
+# [MSB📦] (only in sandbox)
+if [ -d /.msb ]; then
+  printf '\033[01;33m[MSB📦]\033[00m '
 fi
 
 # user@host:cwd
