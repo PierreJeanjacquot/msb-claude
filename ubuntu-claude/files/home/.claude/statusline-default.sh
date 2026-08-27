@@ -65,6 +65,20 @@ fi
 # user@host:cwd
 printf '\033[01;32m%s@%s\033[00m:\033[01;34m%s\033[00m' "$(whoami)" "$(hostname -s)" "$cwd"
 
+# git branch (+ worktree name if $cwd is a linked worktree, i.e. its .git is a file, not a dir)
+git_branch=$(git -C "$cwd" symbolic-ref --short -q HEAD 2>/dev/null)
+[ -z "$git_branch" ] && git_branch=$(git -C "$cwd" rev-parse --short HEAD 2>/dev/null)
+
+if [ -n "$git_branch" ]; then
+  git_worktree=""
+  git_toplevel=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)
+  [ -n "$git_toplevel" ] && [ -f "$git_toplevel/.git" ] && git_worktree=$(basename "$git_toplevel")
+
+  printf ' \033[00;36m[%s' "$git_branch"
+  [ -n "$git_worktree" ] && printf '|%s' "$git_worktree"
+  printf ']\033[0m'
+fi
+
 # ── Line 2: model + context ──────────────────────────────────────────────────
 
 printf '\n'
