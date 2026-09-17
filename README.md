@@ -4,7 +4,7 @@ A Docker image (`ubuntu-claude`) with [Claude Code](https://claude.com/claude-co
 
 ## Contents
 
-- `ubuntu-claude/Dockerfile` — builds on top of `ubuntu`, installs Claude Code, skips the interactive onboarding (auth is handled via a token, see below), sets up a default status line, and installs Node.js via [nvm](https://github.com/nvm-sh/nvm).
+- `ubuntu-claude/Dockerfile` — builds on top of `ubuntu`, installs Claude Code, skips the interactive onboarding (auth is handled via a token, see below), sets up a default status line, and installs [mise](https://mise.jdx.dev) plus Node.js (see the [Dev tools](#dev-tools) cookbook).
 - `ubuntu-claude/files/` — files copied into the image by the Dockerfile, laid out under `home/` to mirror their destination path relative to `/home/ubuntu` (e.g. `files/home/.gitconfig` → `~/.gitconfig`).
 
 ## Prerequisites
@@ -129,6 +129,22 @@ msb create \
 - `--secret "GH_OAUTH_TOKEN@api.github.com"` / `--secret "GH_OAUTH_TOKEN@github.com"` — reads `$GH_OAUTH_TOKEN` from your host shell and makes it available to the sandbox, scoped to those two hosts only (`files/home/.config/gh/hosts.yml` references it as `$MSB_GH_OAUTH_TOKEN`, the placeholder `msb` injects for a secret bound this way — see the [secrets documentation](https://docs.microsandbox.dev/sandboxes/secrets.md)).
 
 If `GH_OAUTH_TOKEN` isn't set, `gh` inside the sandbox has no credentials: `gh auth git-credential` fails, so git operations over HTTPS and the identity-setup hook fail too.
+
+### Dev tools
+
+Dev tool and language runtime versions are managed with [mise](https://mise.jdx.dev), a polyglot version manager (a single replacement for `nvm`, `pyenv`, `rbenv`, ...). It's installed in the image and activated in `~/.bashrc` (`eval "$(mise activate bash)"`), so tools it manages are on `PATH` in every interactive shell — including the one Claude Code runs commands in.
+
+Only Node.js is preinstalled. Anything else is installed on demand, inside the sandbox:
+
+```bash
+mise use -g python@3.12   # install and pin a tool globally
+mise registry             # list known tools and their short names
+mise ls-remote python     # list available versions of a tool
+```
+
+The image ships a baseline `~/.claude/CLAUDE.md` (`files/home/.claude/CLAUDE.md`) telling the agent to reach for `mise use -g <tool>@<version>` rather than `apt`, `nvm`, or `pyenv` when a command is missing — so Claude installs missing runtimes itself, consistently, without being asked each time.
+
+Installs land in the sandbox's own filesystem, so they disappear with `msb rm`. To make a toolchain permanent, add a `mise use -g ...` line to the Dockerfile and rebuild; to pin versions per project, commit a `mise.toml` in the repo you mount — mise picks it up automatically when Claude `cd`s into it.
 
 ### Network isolation
 
