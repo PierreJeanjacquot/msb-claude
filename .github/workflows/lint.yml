@@ -1,4 +1,4 @@
-name: Lint Dockerfiles
+name: Lint
 
 on:
   pull_request:
@@ -8,8 +8,8 @@ on:
 permissions: {}
 
 jobs:
-  hadolint:
-    name: Run hadolint
+  lint-docker:
+    name: Lint Dockerfiles
     runs-on: ubuntu-latest
     permissions:
       contents: read # required for checkout
