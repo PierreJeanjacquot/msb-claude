@@ -15,7 +15,7 @@ mise run lint:docker
 
 Or each individually with `mise run lint:docker:hadolint` / `mise run lint:docker:trivy`.
 
-This checks the Dockerfiles listed explicitly in the `lint:docker:hadolint` and `lint:docker:trivy` tasks (currently just `ubuntu-claude/Dockerfile`). `mise run lint:docker` is the same command CI runs on every pull request and every push to `main` (`.github/workflows/lint-dockerfile.yml`), so a clean local run means a clean CI run.
+This checks the Dockerfiles listed explicitly in the `lint:docker:hadolint` and `lint:docker:trivy` tasks (currently just `ubuntu-claude/Dockerfile`). `mise run lint:docker` is the same command CI runs on every pull request and every push to `main` (`.github/workflows/lint.yml`), so a clean local run means a clean CI run.
 
 Adding a new Dockerfile to the repo? Add it to the `run` command of both the `lint:docker:hadolint` and `lint:docker:trivy` tasks in `mise.toml` — it isn't picked up automatically.
 
