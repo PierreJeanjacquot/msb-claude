@@ -182,3 +182,7 @@ msb metrics -wa         # live CPU/memory/disk/network usage, all sandboxes
 msb logs <sandbox>      # captured stdout/stderr of a sandbox
 msb copy <SRC> <DST>    # copy files host<->sandbox or sandbox<->sandbox (prefix sandbox-side paths with `name:`)
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
