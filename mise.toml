@@ -1,0 +1,9 @@
+[settings]
+lockfile = true
+
+[tools]
+hadolint = "2.15.1"
+
+[tasks."lint:docker"]
+description = "Lint Dockerfiles with hadolint"
+run = "hadolint ubuntu-claude/Dockerfile"
