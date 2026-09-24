@@ -32,13 +32,13 @@ USER ubuntu
 One `### CODE: reason` line per ignored rule, directly above the pragma line, which must itself be the line immediately preceding the instruction — nothing else in between. Both tools only honor the comment line directly adjacent to the instruction, so:
 
 - To ignore several hadolint rules on the same instruction, keep a single pragma with all codes comma-separated (`# hadolint ignore=CODE1,CODE2`).
-- To ignore a trivy rule, use `#trivy:ignore:ID` (colon, not `=`), e.g. `#trivy:ignore:DS-0010`.
+- To ignore a trivy rule, use `# trivy:ignore:ID` (colon, not `=`), e.g. `# trivy:ignore:DS-0010`.
 - To ignore rules from both tools on the same instruction, put both pragmas on that one line, hadolint first:
 
 ```dockerfile
 ### DL3004: sudo is intentional - this image grants the sandbox user passwordless sudo, that's the whole point of this image
 ### DS-0010: same reason as DL3004
-# hadolint ignore=DL3004 #trivy:ignore:DS-0010
+# hadolint ignore=DL3004 # trivy:ignore:DS-0010
 RUN sudo apt-get update ...
 ```
 

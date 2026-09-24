@@ -1,6 +1,6 @@
 ### DL3006: rolling sandbox image, we deliberately track ubuntu:latest
 ### DS-0001: same reason as DL3006
-# hadolint ignore=DL3006 #trivy:ignore:DS-0001
+# hadolint ignore=DL3006 # trivy:ignore:DS-0001
 FROM ubuntu
 ARG DEBIAN_FRONTEND=noninteractive
 SHELL [ "/bin/bash", "-o", "pipefail", "-l", "-c" ]
@@ -44,7 +44,7 @@ RUN jq '.hooks.SessionStart += [{"hooks":[{"type":"command","command":"bash \"$H
 # setup git via gh
 ### DL3004: sudo is intentional - this image grants the sandbox user passwordless sudo, that's the whole point of this image
 ### DS-0010: same reason as DL3004
-# hadolint ignore=DL3004 #trivy:ignore:DS-0010
+# hadolint ignore=DL3004 # trivy:ignore:DS-0010
 RUN sudo mkdir -p -m 755 /etc/apt/keyrings \
     && out=$(mktemp) && curl -fsSL -o "$out" https://cli.github.com/packages/githubcli-archive-keyring.gpg \
     && cat "$out" | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
@@ -70,7 +70,7 @@ RUN curl https://mise.run | sh && echo 'eval "$(~/.local/bin/mise activate bash)
 # setup node
 ### DL3004: sudo is intentional - this image grants the sandbox user passwordless sudo, that's the whole point of this image
 ### DS-0010: same reason as DL3004
-# hadolint ignore=DL3004 #trivy:ignore:DS-0010
+# hadolint ignore=DL3004 # trivy:ignore:DS-0010
 RUN sudo apt-get update \
     && sudo apt-get install -y --no-install-recommends libatomic1 \
     && sudo rm -rf /var/lib/apt/lists/*
