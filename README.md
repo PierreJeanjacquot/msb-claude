@@ -175,12 +175,13 @@ Network policies can only be set at `msb create` time (not added later with `msb
 A few other `msb` commands that are handy while experimenting (see [CLI overview](https://docs.microsandbox.dev/cli/overview.md) for the full reference):
 
 ```bash
-msb ls                  # list all sandboxes
-msb ps -a               # status of running (and, with -a, stopped) sandboxes
-msb inspect <sandbox>   # detailed config/status of a sandbox
-msb metrics -wa         # live CPU/memory/disk/network usage, all sandboxes
-msb logs <sandbox>      # captured stdout/stderr of a sandbox
-msb copy <SRC> <DST>    # copy files host<->sandbox or sandbox<->sandbox (prefix sandbox-side paths with `name:`)
+msb ls                                # list all sandboxes
+msb ps -a                             # status of running (and, with -a, stopped) sandboxes
+msb inspect <sandbox>                 # detailed config/status of a sandbox
+msb metrics -wa                       # live CPU/memory/disk/network usage, all sandboxes
+msb logs <sandbox>                    # captured stdout/stderr of a sandbox
+msb logs <sandbox> --source system    # msb system logs (including blocked requests)
+msb copy <SRC> <DST>                  # copy files host<->sandbox or sandbox<->sandbox (prefix sandbox-side paths with `name:`)
 ```
 
 ## Contributing
