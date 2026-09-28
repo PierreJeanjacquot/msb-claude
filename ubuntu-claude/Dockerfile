@@ -1,11 +1,8 @@
-### DL3006: rolling sandbox image, we deliberately track ubuntu:latest
-### DS-0001: same reason as DL3006
-# hadolint ignore=DL3006 # trivy:ignore:DS-0001
-FROM ubuntu
+FROM ubuntu:26.04
 ARG DEBIAN_FRONTEND=noninteractive
 SHELL [ "/bin/bash", "-o", "pipefail", "-l", "-c" ]
 
-### DL3008: apt package versions tracked rolling on purpose, same reason as DL3006
+### DL3008: apt package versions tracked rolling on purpose - the sandbox should pick up the latest patches of the pinned ubuntu release on every rebuild
 # hadolint ignore=DL3008
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl git jq nano sudo \
