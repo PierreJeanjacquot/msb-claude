@@ -4,7 +4,7 @@ A Docker image (`ubuntu-claude`) with [Claude Code](https://claude.com/claude-co
 
 ## Contents
 
-- `ubuntu-claude/Dockerfile` — builds on top of `ubuntu`, installs Claude Code, skips the interactive onboarding (auth is handled via a token, see below), sets up a default status line, and installs [mise](https://mise.jdx.dev) plus Node.js (see the [Dev tools](#dev-tools) cookbook).
+- `ubuntu-claude/Dockerfile` — builds on top of `ubuntu:26.04`, installs Claude Code, skips the interactive onboarding (auth is handled via a token, see below), sets up a default status line, and installs [mise](https://mise.jdx.dev) plus Node.js (see the [Dev tools](#dev-tools) cookbook) and Docker (see the [Docker](#docker) cookbook).
 - `ubuntu-claude/files/` — files copied into the image by the Dockerfile, laid out under `home/` to mirror their destination path relative to `/home/ubuntu` (e.g. `files/home/.gitconfig` → `~/.gitconfig`).
 
 ## Prerequisites
@@ -145,6 +145,51 @@ mise ls-remote python     # list available versions of a tool
 The image ships a baseline `~/.claude/CLAUDE.md` (`files/home/.claude/CLAUDE.md`) telling the agent to reach for `mise use -g <tool>@<version>` rather than `apt`, `nvm`, or `pyenv` when a command is missing — so Claude installs missing runtimes itself, consistently, without being asked each time.
 
 Installs land in the sandbox's own filesystem, so they disappear with `msb rm`. To make a toolchain permanent, add a `mise use -g ...` line to the Dockerfile and rebuild; to pin versions per project, commit a `mise.toml` in the repo you mount — mise picks it up automatically when Claude `cd`s into it.
+
+### Docker
+
+The image ships Docker CE from [Docker's official apt repo](https://docs.docker.com/engine/install/ubuntu/) (engine, CLI, and the `docker compose`/`docker buildx` plugins), so Claude can build and run containers for Docker-based projects entirely inside the sandbox — a separate `dockerd`, isolated from your host's Docker.
+
+Docker needs a real ext4 filesystem for its storage: the sandbox's root is an overlayfs, and Docker's overlay storage can't be nested on top of it. Create the sandbox as in step 3, adding a dedicated disk mounted on `/var/lib/docker`:
+
+```bash
+msb create \
+  --name ubuntu-msb \
+  --net public \
+  -v ${PWD}:${PWD} \
+  --mount-owned /var/lib/docker:kind=disk,size=10G \
+  --workdir ${PWD} \
+  --cpus 2 --max-cpus 8 \
+  --memory 4G --max-memory 8G \
+  --secret "CLAUDE_CODE_OAUTH_TOKEN@api.anthropic.com" \
+  ubuntu-claude
+```
+
+- `--mount-owned /var/lib/docker:kind=disk,size=10G` — attaches a 10G ext4 disk owned by the sandbox at Docker's data directory. Images, containers, and build cache live there and are deleted along with the sandbox by `msb rm`. Size it for the images you expect to build.
+
+The daemon doesn't start at boot. The image's baseline `~/.claude/CLAUDE.md` (`files/home/.claude/CLAUDE.md`) tells Claude how to start `dockerd` when a task needs it, how to spot a missing `/var/lib/docker` disk, and how to handle msb's TLS interception, which containers don't trust out of the box. Without the disk, `dockerd` still starts, but every `docker run`/`docker build` fails with an overlay mount error.
+
+Mounts can only be set at `msb create` time (not added later with `msb modify`) — remove and recreate the sandbox if you need to add the disk.
+
+#### HTTPS inside containers
+
+msb intercepts all outbound TLS from the sandbox and re-signs it with its own CA (`/.msb/tls/ca.pem`). The sandbox trusts that CA, so `dockerd` pulls images fine, but containers don't: any HTTPS call from a container, or from a `RUN` step of a `docker build`, fails with a certificate verification error until msb's CA is added to the container's trust store.
+
+To run a container, mount msb's CA over the image's CA bundle (path for Debian/Ubuntu/Alpine-based images, other distros keep it elsewhere):
+
+```bash
+docker run -v /.msb/tls/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro <image>
+```
+
+To build an image, the CA has to be added from within the Dockerfile, before the steps that hit the network: copy `/.msb/tls/ca.pem` into the build context and install it into the image's CA bundle (e.g. `COPY` it to `/usr/local/share/ca-certificates/msb-ca.crt` then `RUN update-ca-certificates` on Debian/Ubuntu). The image's baseline `~/.claude/CLAUDE.md` tells Claude to apply this locally without committing it to the project's Dockerfile.
+
+To build `ubuntu-claude` itself from inside a sandbox, pass msb's CA with the `EXTRA_CA_CERT` build arg, so the build's HTTPS downloads (Claude installer, `gh`, mise, Docker repo) trust msb's TLS interception:
+
+```bash
+docker build --build-arg EXTRA_CA_CERT="$(cat /.msb/tls/ca.pem)" ubuntu-claude/ -t ubuntu-claude
+```
+
+The CA is added by a dedicated build stage, only built when `EXTRA_CA_CERT` is set: a regular build (e.g. on your host) has no trace of it. An image built with it keeps trusting that CA, which is harmless inside msb since every sandbox already trusts msb's CA. The build arg stays recorded in `docker history`, which shows which CA an image was built with.
 
 ### Network isolation
 
