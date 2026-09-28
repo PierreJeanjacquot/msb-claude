@@ -171,6 +171,14 @@ The daemon doesn't start at boot. The image's baseline `~/.claude/CLAUDE.md` (`f
 
 Mounts can only be set at `msb create` time (not added later with `msb modify`) — remove and recreate the sandbox if you need to add the disk.
 
+To build `ubuntu-claude` itself from inside a sandbox, pass msb's CA with the `EXTRA_CA_CERT` build arg, so the build's HTTPS downloads (Claude installer, `gh`, mise, Docker repo) trust msb's TLS interception:
+
+```bash
+docker build --build-arg EXTRA_CA_CERT="$(cat /.msb/tls/ca.pem)" ubuntu-claude/ -t ubuntu-claude
+```
+
+The CA is added by a dedicated build stage, only built when `EXTRA_CA_CERT` is set: a regular build (e.g. on your host) has no trace of it. An image built with it keeps trusting that CA, which is harmless inside msb since every sandbox already trusts msb's CA. The build arg stays recorded in `docker history`, which shows which CA an image was built with.
+
 ### Network isolation
 
 To restrict the sandbox's network access to only the Anthropic API (instead of full outbound access), replace `--net public` with `--no-net` plus a `--net-rule` allowing just that destination:

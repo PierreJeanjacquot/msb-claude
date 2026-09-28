@@ -1,4 +1,7 @@
-FROM ubuntu:26.04
+# optional extra CA (PEM) to trust, e.g. when building behind a TLS-intercepting proxy - the base-with-ca stage is only built when it's set
+ARG EXTRA_CA_CERT=""
+
+FROM ubuntu:26.04 AS base
 ARG DEBIAN_FRONTEND=noninteractive
 SHELL [ "/bin/bash", "-o", "pipefail", "-l", "-c" ]
 
@@ -7,6 +10,16 @@ SHELL [ "/bin/bash", "-o", "pipefail", "-l", "-c" ]
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl git jq nano sudo \
     && rm -rf /var/lib/apt/lists/* && update-ca-certificates
+
+FROM base AS base-with-ca
+ARG EXTRA_CA_CERT
+RUN printf '%s\n' "$EXTRA_CA_CERT" > /usr/local/share/ca-certificates/extra-ca.crt && update-ca-certificates
+
+### DL3006: not an external image - resolves to the base or base-with-ca stage above, depending on EXTRA_CA_CERT
+# hadolint ignore=DL3006
+FROM base${EXTRA_CA_CERT:+-with-ca}
+ARG DEBIAN_FRONTEND=noninteractive
+SHELL [ "/bin/bash", "-o", "pipefail", "-l", "-c" ]
 
 # add passwordless sudo for ubuntu user
 RUN echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ubuntu && chmod 0440 /etc/sudoers.d/ubuntu
