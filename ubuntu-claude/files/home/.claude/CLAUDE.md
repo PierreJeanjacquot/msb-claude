@@ -14,7 +14,7 @@ git push https-origin <branch>
 
 ## Docker
 
-Docker CE (from Docker's official apt repo, with the `docker compose` and `docker buildx` plugins) is installed, but the daemon is not running at boot. Start it yourself when a task needs Docker:
+Docker CE is installed, but the daemon is not running at boot. Start it yourself when a task needs Docker:
 
 ```
 sudo dockerd > /tmp/dockerd.log 2>&1 &
