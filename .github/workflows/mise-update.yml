@@ -1,0 +1,28 @@
+name: Mise update
+
+on:
+  schedule:
+    - cron: "30 4 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: mise-update
+  cancel-in-progress: false
+
+jobs:
+  mise-update:
+    name: Mise update
+    runs-on: ubuntu-latest
+    environment: main-automation
+    permissions:
+      contents: read # required for checkout
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: foo-coders/github-actions/actions/mise-update@mise-update/v1
+        with:
+          client-id: ${{ secrets.MISE_UPDATE_CLIENT_ID }}
+          private-key: ${{ secrets.MISE_UPDATE_PRIVATE_KEY }}
