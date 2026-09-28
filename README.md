@@ -181,15 +181,6 @@ To run a container, mount msb's CA over the image's CA bundle (path for Debian/U
 docker run -v /.msb/tls/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro <image>
 ```
 
-With Docker Compose, add the same bind mount to each service that makes HTTPS calls:
-
-```yaml
-services:
-  app:
-    volumes:
-      - /.msb/tls/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro
-```
-
 To build an image, the CA has to be added from within the Dockerfile, before the steps that hit the network: copy `/.msb/tls/ca.pem` into the build context and install it into the image's CA bundle (e.g. `COPY` it to `/usr/local/share/ca-certificates/msb-ca.crt` then `RUN update-ca-certificates` on Debian/Ubuntu). The image's baseline `~/.claude/CLAUDE.md` tells Claude to apply this locally without committing it to the project's Dockerfile.
 
 To build `ubuntu-claude` itself from inside a sandbox, pass msb's CA with the `EXTRA_CA_CERT` build arg, so the build's HTTPS downloads (Claude installer, `gh`, mise, Docker repo) trust msb's TLS interception:

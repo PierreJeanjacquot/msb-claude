@@ -22,7 +22,7 @@ for _ in $(seq 30); do docker info >/dev/null 2>&1 && break; sleep 1; done
 docker info --format '{{.ServerVersion}}'   # prints the version once the daemon is ready
 ```
 
-`ubuntu` is in the `docker` group, so `docker` works without `sudo` once the daemon is up. Logs are in `/tmp/dockerd.log`. Compose is the v2 plugin only: use `docker compose`, not `docker-compose`.
+`ubuntu` is in the `docker` group, so `docker` works without `sudo` once the daemon is up. Logs are in `/tmp/dockerd.log`.
 
 **Prerequisite: an ext4 disk on `/var/lib/docker`.** The sandbox root is an overlayfs, and Docker's overlay storage can't be nested on top of it. Check with `findmnt /var/lib/docker`: it must show an `ext4` filesystem. If nothing is mounted there, `dockerd` still starts, but the first `docker run`/`docker build` fails with `mount source: "overlay" ... fstype: overlay ... err: invalid argument`. The fix is on the host, not in here: the sandbox has to be recreated with `--mount-owned /var/lib/docker:kind=disk,size=10G`. Tell the user instead of working around it.
 
