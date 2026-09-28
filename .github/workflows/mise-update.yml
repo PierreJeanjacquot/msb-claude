@@ -13,6 +13,7 @@ concurrency:
 
 jobs:
   mise-update:
+    name: Mise update
     runs-on: ubuntu-latest
     environment: main-automation
     permissions:
