@@ -73,6 +73,22 @@ RUN sudo apt-get update \
     && sudo rm -rf /var/lib/apt/lists/*
 RUN mise use -g node@26
 
+# setup docker
+### DL3004: sudo is intentional - this image grants the sandbox user passwordless sudo, that's the whole point of this image
+### DS-0010: same reason as DL3004
+# hadolint ignore=DL3004 # trivy:ignore:DS-0010
+RUN sudo mkdir -p -m 755 /etc/apt/keyrings \
+    && out=$(mktemp) && curl -fsSL -o "$out" https://download.docker.com/linux/ubuntu/gpg \
+    && cat "$out" | sudo tee /etc/apt/keyrings/docker.asc > /dev/null \
+    && sudo chmod go+r /etc/apt/keyrings/docker.asc \
+    && printf 'Types: deb\nURIs: https://download.docker.com/linux/ubuntu\nSuites: %s\nComponents: stable\nArchitectures: %s\nSigned-By: /etc/apt/keyrings/docker.asc\n' \
+        "$(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")" "$(dpkg --print-architecture)" \
+        | sudo tee /etc/apt/sources.list.d/docker.sources > /dev/null \
+    && sudo apt-get update \
+    && sudo apt-get install -y --no-install-recommends docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
+    && sudo rm -rf /var/lib/apt/lists/* \
+    && sudo usermod -aG docker ubuntu
+
 # add baseline CLAUDE.md
 COPY --chown=ubuntu:ubuntu files/home/.claude/CLAUDE.md .claude/
 
