@@ -171,6 +171,27 @@ The daemon doesn't start at boot. The image's baseline `~/.claude/CLAUDE.md` (`f
 
 Mounts can only be set at `msb create` time (not added later with `msb modify`) — remove and recreate the sandbox if you need to add the disk.
 
+#### HTTPS inside containers
+
+msb intercepts all outbound TLS from the sandbox and re-signs it with its own CA (`/.msb/tls/ca.pem`). The sandbox trusts that CA, so `dockerd` pulls images fine, but containers don't: any HTTPS call from a container, or from a `RUN` step of a `docker build`, fails with a certificate verification error until msb's CA is added to the container's trust store.
+
+To run a container, mount msb's CA over the image's CA bundle (path for Debian/Ubuntu/Alpine-based images, other distros keep it elsewhere):
+
+```bash
+docker run -v /.msb/tls/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro <image>
+```
+
+With Docker Compose, add the same bind mount to each service that makes HTTPS calls:
+
+```yaml
+services:
+  app:
+    volumes:
+      - /.msb/tls/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro
+```
+
+To build an image, the CA has to be added from within the Dockerfile, before the steps that hit the network: copy `/.msb/tls/ca.pem` into the build context and install it into the image's CA bundle (e.g. `COPY` it to `/usr/local/share/ca-certificates/msb-ca.crt` then `RUN update-ca-certificates` on Debian/Ubuntu). The image's baseline `~/.claude/CLAUDE.md` tells Claude to apply this locally without committing it to the project's Dockerfile.
+
 To build `ubuntu-claude` itself from inside a sandbox, pass msb's CA with the `EXTRA_CA_CERT` build arg, so the build's HTTPS downloads (Claude installer, `gh`, mise, Docker repo) trust msb's TLS interception:
 
 ```bash
