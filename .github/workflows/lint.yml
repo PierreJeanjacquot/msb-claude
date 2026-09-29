@@ -7,9 +7,14 @@ on:
 
 permissions: {}
 
+# Cancelling a push to main would leave that commit unlinted.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  lint-docker:
-    name: Lint Dockerfiles
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     permissions:
       contents: read # required for checkout
@@ -18,4 +23,9 @@ jobs:
         with:
           persist-credentials: false
       - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
-      - run: mise run lint:docker
+      - name: Check formatting
+        run: mise run lint:format
+      - name: Lint GitHub action
+        run: mise run lint:github-action
+      - name: Lint Dockerfile
+        run: mise run lint:docker
