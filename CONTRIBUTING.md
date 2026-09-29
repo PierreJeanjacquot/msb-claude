@@ -1,8 +1,44 @@
 # Contributing
 
+## Running all checks
+
+Every linter and formatter below is pinned via this repo's `mise.toml`/`mise.lock`. Run them all locally with:
+
+```bash
+mise run lint
+```
+
+This runs `lint:format`, `lint:github-action`, and `lint:docker`: the same tasks CI runs, as separate steps, on every pull request and every push to `main` (`.github/workflows/lint.yml`). A clean local run means a clean CI run.
+
+## Formatting
+
+Files are formatted with [prettier](https://prettier.io).
+
+```bash
+mise run format        # rewrite files in place
+mise run lint:format   # check only (what CI runs)
+```
+
+## Linting GitHub Actions workflows
+
+Workflows under `.github/` are checked by two tools:
+
+- [actionlint](https://github.com/rhysd/actionlint): workflow correctness.
+- [zizmor](https://docs.zizmor.sh): workflow security.
+
+Run both with `mise run lint:github-action`, or each on its own with `mise run lint:actionlint` / `mise run lint:zizmor`.
+
+### Ignoring a zizmor finding
+
+Put an inline `# zizmor: ignore[RULE]` comment on the offending line. This is used for the in-house `foo-coders/github-actions` actions, which are deliberately referenced by their moving major tag (`@<action>/v1`) rather than a SHA:
+
+```yaml
+- uses: foo-coders/github-actions/actions/mise-update@mise-update/v1 # zizmor: ignore[unpinned-uses]
+```
+
 ## Linting Dockerfiles
 
-Dockerfiles are checked by two tools, both pinned via this repo's `mise.toml`/`mise.lock` (see the [Dev tools](README.md#dev-tools) cookbook for how `mise` version-pinning works):
+Dockerfiles are checked by two tools:
 
 - [hadolint](https://github.com/hadolint/hadolint) — Dockerfile best practices and shellcheck of `RUN` commands.
 - [trivy config](https://trivy.dev/latest/docs/scanner/misconfiguration/) — Dockerfile misconfiguration scanning. Any finding, at any severity, fails the run.
@@ -15,7 +51,7 @@ mise run lint:docker
 
 Or each individually with `mise run lint:docker:hadolint` / `mise run lint:docker:trivy`.
 
-This checks the Dockerfiles listed explicitly in the `lint:docker:hadolint` and `lint:docker:trivy` tasks (currently just `ubuntu-claude/Dockerfile`). `mise run lint:docker` is the same command CI runs on every pull request and every push to `main` (`.github/workflows/lint.yml`), so a clean local run means a clean CI run.
+This checks the Dockerfiles listed explicitly in the `lint:docker:hadolint` and `lint:docker:trivy` tasks (currently just `ubuntu-claude/Dockerfile`).
 
 Adding a new Dockerfile to the repo? Add it to the `run` command of both the `lint:docker:hadolint` and `lint:docker:trivy` tasks in `mise.toml` — it isn't picked up automatically.
 
